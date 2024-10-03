@@ -1,5 +1,7 @@
 import torch
 import torch.nn.functional as F
+from src.metrics import lpips
+from torchvision import transforms
 
 # Based on code from https://github.com/pix2pixzero/pix2pix-zero
 def noise_regularization(
@@ -95,6 +97,12 @@ def inversion_step(
     num_renoise_steps: int = 100,
     first_step_max_timestep: int = 250,
     generator=None,
+    image_epsilon: float = 0,
+    current_inversion_step: int = 0,
+    pipe_inference = None,
+    prompt = None,
+    num_inference_steps: int = 4,
+    original_image = None,
 ) -> torch.tensor:
     extra_step_kwargs = {}
     avg_range = pipe.cfg.average_first_step_range if t.item() < first_step_max_timestep else pipe.cfg.average_step_range
@@ -105,6 +113,10 @@ def inversion_step(
     z_tp1_forward = pipe.scheduler.add_noise(pipe.z_0, pipe.noise, t.view((1))).detach()
 
     approximated_z_tp1 = z_t.clone()
+    loss_fn = lpips.LPIPS()
+    to_tensor = transforms.ToTensor()
+    original_image = to_tensor(original_image).cuda()
+    previous_error = 0
     for i in range(num_renoise_steps + 1):
 
         with torch.no_grad():
@@ -149,6 +161,40 @@ def inversion_step(
             noise_pred = noise_regularization(noise_pred, noise_pred_optimal, lambda_kl=pipe.cfg.noise_regularization_lambda_kl, lambda_ac=pipe.cfg.noise_regularization_lambda_ac, num_reg_steps=pipe.cfg.noise_regularization_num_reg_steps, num_ac_rolls=pipe.cfg.noise_regularization_num_ac_rolls, generator=generator)
         
         approximated_z_tp1 = pipe.scheduler.inv_step(noise_pred, t, z_t, **extra_step_kwargs, return_dict=False)[0].detach()
+        
+        if image_epsilon>0:
+            approximated_z_tp1_updated = None
+            # if average latents is enabled, we need to perform an additional step with the average noise
+            if pipe.cfg.average_latent_estimations and nosie_pred_avg is not None:
+                nosie_pred_avg = noise_regularization(nosie_pred_avg, noise_pred_optimal, lambda_kl=pipe.cfg.noise_regularization_lambda_kl, lambda_ac=pipe.cfg.noise_regularization_lambda_ac, num_reg_steps=pipe.cfg.noise_regularization_num_reg_steps, num_ac_rolls=pipe.cfg.noise_regularization_num_ac_rolls, generator=generator)
+                approximated_z_tp1_updated = pipe.scheduler.inv_step(nosie_pred_avg, t, z_t, **extra_step_kwargs, return_dict=False)[0].detach()
+            # perform noise correction
+            if pipe.cfg.perform_noise_correction:
+                if approximated_z_tp1_updated == None:
+                    approximated_z_tp1_updated = approximated_z_tp1
+                noise_pred = unet_pass(pipe, approximated_z_tp1_updated, t, prompt_embeds, added_cond_kwargs)
+
+                # perform guidance
+                if pipe.do_classifier_free_guidance:
+                    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                    noise_pred = noise_pred_uncond + pipe.guidance_scale * (noise_pred_text - noise_pred_uncond)
+                
+                pipe.scheduler.step_and_update_noise(noise_pred, t, approximated_z_tp1_updated, z_t, return_dict=False, optimize_epsilon_type=pipe.cfg.perform_noise_correction)
+            # Reconstruct image
+            reconstructed_image = pipe_inference(prompt = prompt,
+                    num_inference_steps = num_inference_steps,
+                    negative_prompt = prompt,
+                    image = approximated_z_tp1_updated,
+                    strength = current_inversion_step/num_inference_steps,
+                    denoising_start = 1.0-current_inversion_step/num_inference_steps,
+                    guidance_scale = pipe.guidance_scale,
+                    output_type = 'image').images[0]
+            reconstructed_image = to_tensor(reconstructed_image).cuda()
+            current_error = loss_fn(reconstructed_image, original_image).item()
+            print(current_error)
+            if current_error < previous_error and (previous_error - current_error) < image_epsilon:
+                break
+            previous_error = current_error
 
     # if average latents is enabled, we need to perform an additional step with the average noise
     if pipe.cfg.average_latent_estimations and nosie_pred_avg is not None:

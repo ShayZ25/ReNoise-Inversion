@@ -57,6 +57,8 @@ class SDXLDDIMPipeline(StableDiffusionXLImg2ImgPipeline):
         fixed_point_inversion_strength: int = 50,
         pipe_inference: Optional[Callable[..., Any]] = None,
         image_epsilon: float = 0,
+        num_inference_steps: int = 4,
+        original_image: int=0,
         **kwargs,
     ):
         callback = kwargs.pop("callback", None)
@@ -242,7 +244,13 @@ class SDXLDDIMPipeline(StableDiffusionXLImg2ImgPipeline):
                                         prompt_embeds,
                                         added_cond_kwargs,
                                         num_renoise_steps=num_renoise_steps,
-                                        generator=generator)
+                                        generator=generator,
+                                        image_epsilon=image_epsilon,
+                                        current_inversion_step = i+1,
+                                        pipe_inference = pipe_inference,
+                                        prompt=prompt,
+                                        num_inference_steps = num_inference_steps,
+                                        original_image=original_image)
                     all_fixed_point_latents[-1].append(latents.clone())
                     if callback_on_step_end is not None:
                         callback_kwargs = {}
@@ -307,8 +315,14 @@ class SDXLDDIMPipeline(StableDiffusionXLImg2ImgPipeline):
                                        prompt_embeds,
                                        added_cond_kwargs,
                                        num_renoise_steps=num_renoise_steps,
-                                       generator=generator)
-                    
+                                       generator=generator,
+                                       image_epsilon=image_epsilon,
+                                       current_inversion_step=i+1,
+                                       pipe_inference=pipe_inference,
+                                       prompt=prompt,
+                                       num_inference_steps = num_inference_steps,
+                                       original_image=original_image)
+
                 all_latents.append(latents.clone())
 
                 if callback_on_step_end is not None:

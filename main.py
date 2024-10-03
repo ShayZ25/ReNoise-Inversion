@@ -57,7 +57,8 @@ def run(init_image: Image,
                         fixed_point_inversion_steps = cfg.fixed_point_inversion_steps,
                         fixed_point_inversion_strength = cfg.fixed_point_inversion_strength,
                         pipe_inference = pipe_inference,
-                        image_epsilon = cfg.image_epsilon)
+                        image_epsilon = cfg.image_epsilon,
+                        original_image=init_image)
         latents = res[0][0]
         all_latents = res[1]
         all_fixed_point_latents = res[2]

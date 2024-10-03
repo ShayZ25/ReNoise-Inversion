@@ -3,7 +3,6 @@ import gradio as gr
 import spaces
 from PIL import Image
 import torch
-
 from src.enums import Model_Type, Scheduler_Type
 from src.utils.enums_utils import model_type_to_size, get_pipes
 from src.config import RunConfig
@@ -247,8 +246,8 @@ with gr.Blocks(css='app/style.css') as demo:
                     label='Image epsilon',
                     info='Reduce renoise iterations. Increase epsilon for less iterations.',
                     minimum=0,
-                    maximum=0.5,
-                    step=0.02
+                    maximum=0.05,
+                    step=0.001
                 )
             run_button = gr.Button('Edit')
         with gr.Column():
