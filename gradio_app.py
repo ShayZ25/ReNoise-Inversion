@@ -47,7 +47,8 @@ def main_pipeline(
         noise_regularization_lambda_kl: float,
         perform_noise_correction: bool,
         fixed_point_iterations: int,
-        fixed_point_inversion_steps: int ):
+        fixed_point_inversion_steps: int,
+        image_epsilon: float):
 
         global prev_configs, prev_inv_latents, prev_images, prev_noises
 
@@ -72,7 +73,8 @@ def main_pipeline(
                     perform_noise_correction = perform_noise_correction,
                     seed = seed,
                     fixed_point_iterations = fixed_point_iterations,
-                    fixed_point_inversion_steps = fixed_point_inversion_steps)
+                    fixed_point_inversion_steps = fixed_point_inversion_steps,
+                    image_epsilon = image_epsilon)
         
         inv_latent = None
         noise_list = None
@@ -241,6 +243,13 @@ with gr.Blocks(css='app/style.css') as demo:
                     value=2,
                     step=1
                 )
+                image_epsilon = gr.Slider(
+                    label='Image epsilon',
+                    info='Reduce renoise iterations. Increase epsilon for less iterations.',
+                    minimum=0,
+                    maximum=0.5,
+                    step=0.02
+                )
             run_button = gr.Button('Edit')
         with gr.Column():
             # result = gr.Gallery(label='Result')
@@ -270,6 +279,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     0, #fixed_point_iterations
                     1, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/space_dog.png", #input_image
@@ -289,6 +299,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     2, #fixed_point_iterations
                     2, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                                 [
                     "example_images/space_dog.png", #input_image
@@ -308,6 +319,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     0, #fixed_point_iterations
                     1, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/space_dog.png", #input_image
@@ -327,6 +339,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     2, #fixed_point_iterations
                     2, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/monkey.jpeg", #input_image
@@ -346,6 +359,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     0, #fixed_point_iterations
                     1, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/monkey.jpeg", #input_image
@@ -365,6 +379,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     2, #fixed_point_iterations
                     2, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/monkey.jpeg", #input_image
@@ -384,6 +399,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     0, #fixed_point_iterations
                     1, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/monkey.jpeg", #input_image
@@ -403,6 +419,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     2, #fixed_point_iterations
                     2, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/bicycle.jpg", #input_image
@@ -422,6 +439,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     0, #fixed_point_iterations
                     1, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/bicycle.jpg", #input_image
@@ -441,6 +459,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     3, #fixed_point_iterations
                     2, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                                 [
                     "example_images/bicycle.jpg", #input_image
@@ -460,6 +479,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     0, #fixed_point_iterations
                     1, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
                 [
                     "example_images/bicycle.jpg", #input_image
@@ -479,6 +499,7 @@ with gr.Blocks(css='app/style.css') as demo:
                     True, #noise_correction,
                     1, #fixed_point_iterations
                     2, #fixed_point_inversion_steps
+                    0, #image_epsilon
                 ],
             ]
 
@@ -500,7 +521,8 @@ with gr.Blocks(css='app/style.css') as demo:
                             noise_regularization_lambda_kl,
                             noise_correction,
                             fixed_point_iterations,
-                            fixed_point_inversion_steps
+                            fixed_point_inversion_steps,
+                            image_epsilon
                         ],
                         outputs=[
                             result
@@ -526,7 +548,8 @@ with gr.Blocks(css='app/style.css') as demo:
         noise_regularization_lambda_kl,
         noise_correction,
         fixed_point_iterations,
-        fixed_point_inversion_steps
+        fixed_point_inversion_steps,
+        image_epsilon
     ]
     outputs = [
         result

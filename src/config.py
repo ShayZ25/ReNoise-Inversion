@@ -52,5 +52,9 @@ class RunConfig:
     
     fixed_point_inversion_strength: int = 4
     
+    # Reduce renoise steps
+    
+    image_epsilon: float = 0
+    
     def __post_init__(self):
         pass

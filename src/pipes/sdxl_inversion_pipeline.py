@@ -56,6 +56,7 @@ class SDXLDDIMPipeline(StableDiffusionXLImg2ImgPipeline):
         fixed_point_inversion_steps: int = 2,
         fixed_point_inversion_strength: int = 50,
         pipe_inference: Optional[Callable[..., Any]] = None,
+        image_epsilon: float = 0,
         **kwargs,
     ):
         callback = kwargs.pop("callback", None)
